@@ -256,7 +256,6 @@
       <a class="nav-link" href="#overview">System overview</a>
       <a class="nav-link" href="#deepagent-role">deepagent role</a>
       <a class="nav-link" href="#services">Two services</a>
-      <a class="nav-link" href="#metadata">metadata jsonb</a>
     </div>
 
     <div class="nav-group">
@@ -318,8 +317,8 @@
           <div class="value">AWS SES</div>
         </div>
         <div class="card">
-          <h4>Flexible data</h4>
-          <div class="value">metadata jsonb</div>
+          <h4>Storage</h4>
+          <div class="value">Postgres + S3</div>
         </div>
       </div>
 
@@ -356,9 +355,45 @@ flowchart TB
     <section id="deepagent-role">
       <h2>What deepagent does</h2>
       <p class="lead">
-        deepagent does <strong>not</strong> produce free-form “campaign copy” as the main deliverable.
-        The <strong>campaign row is created in marketing-svc</strong>. deepagent fills the <strong>properties in the template JSON schema</strong>.
+        deepagent handles <strong>onboarding</strong> (website scrape → profile, KB, assets) and <strong>campaign generation</strong>
+        (fill template JSON properties from hotel KB + campaign details). It does <strong>not</strong> produce free-form “campaign copy” as the main deliverable.
       </p>
+
+      <h3>Onboarding — URL scrape</h3>
+      <div class="flow-steps">
+        <div class="flow-step" data-step="1">
+          <div><strong>marketing-svc</strong> creates hotel row with <code>website_url</code> → <code>onboard_status = scraping</code></div>
+        </div>
+        <div class="flow-step" data-step="2">
+          <div><strong>deepagent</strong> crawls the hotel website — extracts profile, images, brand tone</div>
+        </div>
+        <div class="flow-step" data-step="3">
+          <div><strong>deepagent</strong> builds <code>knowledge.md</code> (KB) and uploads images to S3</div>
+        </div>
+        <div class="flow-step" data-step="4">
+          <div><strong>deepagent</strong> calls marketing onboard APIs — profile, KB URL, classified assets</div>
+        </div>
+        <div class="flow-step" data-step="5">
+          <div><strong>marketing-svc</strong> sets <code>onboard_status = ready</code> when profile + KB + min assets exist</div>
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <pre class="mermaid">
+sequenceDiagram
+  participant Mkt as marketing-svc
+  participant DA as deepagent
+  Mkt->>Mkt: POST /hotels with website_url
+  Mkt->>DA: trigger scrape job
+  DA->>DA: crawl website_url
+  DA->>DA: build knowledge.md + upload assets
+  DA->>Mkt: PUT profile + POST kb + POST assets
+  Mkt->>Mkt: onboard_status ready
+        </pre>
+      </div>
+
+      <h3>Campaign generation — fill template JSON</h3>
+      <p>The <strong>campaign row is created in marketing-svc</strong>. deepagent fills the <strong>properties in the template JSON schema</strong>.</p>
 
       <div class="flow-steps">
         <div class="flow-step" data-step="1">
@@ -415,30 +450,6 @@ sequenceDiagram
             <li>Prompt-edit JSON on user request</li>
           </ul>
         </div>
-      </div>
-    </section>
-
-    <section id="metadata">
-      <h2>Flexible data — metadata jsonb</h2>
-      <p class="lead">
-        Hotel and campaign data <strong>keeps changing</strong>. Instead of adding a new column for every field, store evolving data in a <code>metadata</code> jsonb column.
-      </p>
-
-      <table>
-        <thead>
-          <tr><th>Table</th><th>Stable columns</th><th><code>metadata</code> jsonb holds</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><code>hotels</code></td><td>name, website_url, timezone, onboard_status</td><td>External ids, feature flags, custom fields — link to central auth later</td></tr>
-          <tr><td><code>hotel_profiles</code></td><td>sender_from_email, sender_from_name</td><td>Entire scraped profile blob: amenities, dining, rooms, brand</td></tr>
-          <tr><td><code>campaigns</code></td><td>hotel_id, template_id, status, scheduled_at</td><td>Extra campaign fields without migrations</td></tr>
-          <tr><td><code>email_templates</code></td><td>key, html_url, json_schema, prompt</td><td>Layout variants, future A/B config</td></tr>
-          <tr><td><code>users</code></td><td>username, role, hotel_id</td><td>Preferences, audit extras</td></tr>
-        </tbody>
-      </table>
-
-      <div class="callout orange">
-        <strong>Trade-off:</strong> jsonb is flexible and avoids constant schema migrations. Promote a field to a real column only when it is stable and needs indexing. For v1 this is the right default — requirements will change.
       </div>
     </section>
 
