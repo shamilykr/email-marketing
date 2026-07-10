@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Marketing — Architecture Guide | Dextr</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f8fafc;
+      --surface2: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --green: #16a34a;
+      --green-soft: #f0fdf4;
+      --orange: #d97706;
+      --orange-soft: #fffbeb;
+      --sidebar-w: 280px;
+      --header-h: 64px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .top-header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 24px 0 calc(var(--sidebar-w) + 24px);
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .top-header h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
+
+    .top-header .badge {
+      margin-left: 12px; font-size: 0.7rem; padding: 3px 10px;
+      background: var(--accent-soft); color: var(--accent);
+      border-radius: 999px; font-weight: 500;
+    }
+
+    .sidebar {
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w); height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto; z-index: 101;
+      padding: 20px 0 40px;
+    }
+
+    .sidebar-brand {
+      padding: 16px 20px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .sidebar-brand .logo { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .sidebar-brand .sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+    .nav-group { padding: 8px 12px; }
+
+    .nav-group-title {
+      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); padding: 8px 12px 6px; font-weight: 600;
+    }
+
+    .nav-link {
+      display: block; padding: 8px 12px; color: var(--muted);
+      text-decoration: none; font-size: 0.875rem;
+      border-radius: 8px; margin: 2px 0; transition: all 0.15s;
+    }
+
+    .nav-link:hover { background: var(--surface2); color: var(--text); }
+    .nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+    .nav-link .step-num { display: inline-block; width: 22px; font-size: 0.7rem; opacity: 0.7; }
+
+    .main {
+      margin-left: var(--sidebar-w);
+      padding: calc(var(--header-h) + 32px) 48px 80px;
+      max-width: 920px;
+    }
+
+    section { margin-bottom: 64px; scroll-margin-top: calc(var(--header-h) + 24px); }
+
+    section h2 {
+      font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em;
+      margin-bottom: 8px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    section h3 { font-size: 1.1rem; font-weight: 600; margin: 28px 0 12px; }
+    section p, section li { color: #334155; margin-bottom: 12px; }
+    section ul, section ol { padding-left: 1.4rem; margin-bottom: 16px; }
+    .lead { font-size: 1.05rem; color: var(--muted); margin-bottom: 24px; }
+
+    .card-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin: 20px 0;
+    }
+
+    .card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .card h4 {
+      font-size: 0.85rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+    }
+
+    .card .value { font-size: 1rem; font-weight: 600; }
+    .card.accent { border-color: #93c5fd; background: var(--accent-soft); }
+
+    table {
+      width: 100%; border-collapse: collapse; margin: 16px 0 24px;
+      font-size: 0.875rem; background: var(--bg);
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+    th {
+      background: var(--surface); color: var(--muted); font-weight: 600;
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    code {
+      background: var(--surface2); padding: 2px 8px; border-radius: 4px;
+      font-size: 0.85em; color: #1d4ed8;
+    }
+
+    .diagram-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin: 20px 0; overflow-x: auto;
+    }
+
+    .figure {
+      margin: 24px 0; border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; background: var(--bg);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .figure img { width: 100%; display: block; }
+    .figure figcaption {
+      padding: 12px 16px; font-size: 0.8rem; color: var(--muted);
+      border-top: 1px solid var(--border); background: var(--surface);
+    }
+
+    .flow-steps { display: flex; flex-direction: column; margin: 24px 0; }
+
+    .flow-step {
+      display: flex; gap: 16px; padding: 16px 0;
+      border-left: 2px solid var(--border);
+      margin-left: 15px; padding-left: 24px; position: relative;
+    }
+
+    .flow-step::before {
+      content: attr(data-step);
+      position: absolute; left: -16px; width: 30px; height: 30px;
+      background: var(--accent); color: white; border-radius: 50%;
+      font-size: 0.75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .flow-step strong { display: block; margin-bottom: 4px; }
+
+    .callout {
+      border-left: 4px solid var(--accent); background: var(--accent-soft);
+      padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 0.9rem;
+    }
+
+    .callout.green { border-color: var(--green); background: var(--green-soft); }
+    .callout.orange { border-color: var(--orange); background: var(--orange-soft); }
+    .callout.preferred { border-color: #7c3aed; background: #f5f3ff; }
+
+    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+
+    .split-box {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    .split-box h4 {
+      font-size: 0.9rem; margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .split-box.marketing h4 { color: #2563eb; }
+    .split-box.deepagent h4 { color: #7c3aed; }
+    .split-box ul { list-style: none; padding: 0; font-size: 0.875rem; }
+    .split-box li { padding: 4px 0; color: var(--muted); }
+    .split-box li::before { content: "✓ "; color: var(--green); }
+
+    .auth-options { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+
+    .auth-card {
+      border: 2px solid var(--border); border-radius: 12px; padding: 20px;
+      background: var(--bg);
+    }
+
+    .auth-card.preferred { border-color: #7c3aed; background: #faf5ff; }
+    .auth-card .tag {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #7c3aed; margin-bottom: 8px;
+    }
+
+    .db-section { margin-bottom: 40px; }
+    .db-section h3 {
+      font-size: 1rem; color: var(--accent);
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .top-header { padding-left: 24px; }
+      .main { margin-left: 0; padding: calc(var(--header-h) + 24px) 20px 60px; }
+      .split-grid, .auth-options { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .sidebar, .top-header { display: none; }
+      .main { margin: 0; padding: 20px; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar" aria-label="Architecture navigation">
+    <div class="sidebar-brand">
+      <div class="logo">Email Marketing</div>
+      <div class="sub">Dextr Architecture Guide</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">Overview</div>
+      <a class="nav-link" href="#overview">System overview</a>
+      <a class="nav-link" href="#deepagent-role">deepagent role</a>
+      <a class="nav-link" href="#services">Two services</a>
+      <a class="nav-link" href="#metadata">metadata jsonb</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">Product flow</div>
+      <a class="nav-link" href="#step1"><span class="step-num">1</span> Entry point &amp; tenant</a>
+      <a class="nav-link" href="#step2"><span class="step-num">2</span> Onboarding flow</a>
+      <a class="nav-link" href="#step3"><span class="step-num">3</span> Sign in</a>
+      <a class="nav-link" href="#step4"><span class="step-num">4</span> Layout templates</a>
+      <a class="nav-link" href="#step5"><span class="step-num">5</span> Campaign creation</a>
+      <a class="nav-link" href="#step6"><span class="step-num">6</span> Preview &amp; editor</a>
+      <a class="nav-link" href="#step7"><span class="step-num">7</span> Recipients</a>
+      <a class="nav-link" href="#step8"><span class="step-num">8</span> Send email</a>
+      <a class="nav-link" href="#step9"><span class="step-num">9</span> Scheduling</a>
+      <a class="nav-link" href="#step10"><span class="step-num">10</span> Analytics</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">Database design</div>
+      <a class="nav-link" href="#database">Summary</a>
+      <a class="nav-link" href="#db-hotels">hotels</a>
+      <a class="nav-link" href="#db-hotel-profiles">hotel_profiles</a>
+      <a class="nav-link" href="#db-knowledge-bases">knowledge_bases</a>
+      <a class="nav-link" href="#db-assets">assets</a>
+      <a class="nav-link" href="#db-users">users</a>
+      <a class="nav-link" href="#db-email-templates">email_templates</a>
+      <a class="nav-link" href="#db-campaigns">campaigns</a>
+      <a class="nav-link" href="#db-campaign-recipients">campaign_recipients</a>
+      <a class="nav-link" href="#db-campaign-links">campaign_links</a>
+      <a class="nav-link" href="#db-tracking-events">tracking_events</a>
+      <a class="nav-link" href="#db-jobs">jobs</a>
+    </div>
+  </nav>
+
+  <header class="top-header">
+    <h1>Email Marketing Agent</h1>
+    <span class="badge">Architecture v1</span>
+  </header>
+
+  <main class="main">
+
+    <section id="overview">
+      <h2>System overview</h2>
+      <p class="lead">
+        A new standalone service (<strong>dextr-marketing-svc</strong>) owns hotels, campaigns, email delivery, and analytics.
+        <strong>deepagent</strong> handles website scrape, KB generation, and <strong>filling template JSON properties</strong> from hotel knowledge + campaign details.
+      </p>
+
+      <div class="card-grid">
+        <div class="card accent">
+          <h4>New service</h4>
+          <div class="value">dextr-marketing-svc</div>
+        </div>
+        <div class="card">
+          <h4>AI engine</h4>
+          <div class="value">deepagent</div>
+        </div>
+        <div class="card">
+          <h4>Email delivery</h4>
+          <div class="value">AWS SES</div>
+        </div>
+        <div class="card">
+          <h4>Flexible data</h4>
+          <div class="value">metadata jsonb</div>
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <pre class="mermaid">
+flowchart TB
+  subgraph ui [Marketing UI]
+    FE[Dashboard]
+  end
+  subgraph mkt [dextr-marketing-svc]
+    API[REST APIs]
+    DB[(Postgres)]
+    SES[AWS SES]
+  end
+  subgraph da [deepagent]
+    AI[Scrape + Fill JSON]
+  end
+  S3[(S3 URLs)]
+  FE --> API
+  API --> DB
+  API --> S3
+  API --> SES
+  API --> AI
+  AI --> API
+        </pre>
+      </div>
+
+      <div class="callout green">
+        <strong>End-to-end:</strong>
+        Create hotel → scrape (profile + KB + assets) → sign in → pick layout → create campaign row → deepagent fills JSON → preview &amp; edit → recipients → send or schedule → analytics.
+      </div>
+    </section>
+
+    <section id="deepagent-role">
+      <h2>What deepagent does</h2>
+      <p class="lead">
+        deepagent does <strong>not</strong> produce free-form “campaign copy” as the main deliverable.
+        The <strong>campaign row is created in marketing-svc</strong>. deepagent fills the <strong>properties in the template JSON schema</strong>.
+      </p>
+
+      <div class="flow-steps">
+        <div class="flow-step" data-step="1">
+          <div><strong>marketing-svc</strong> creates campaign draft — title, description, template_id, hotel_id</div>
+        </div>
+        <div class="flow-step" data-step="2">
+          <div><strong>Inputs to deepagent</strong> — hotel KB (markdown URL), campaign details, template <code>json_schema</code>, classified assets</div>
+        </div>
+        <div class="flow-step" data-step="3">
+          <div><strong>deepagent output</strong> — values for each JSON slot: headlines, bodies, image URLs, CTA, subject, preheader</div>
+        </div>
+        <div class="flow-step" data-step="4">
+          <div><strong>marketing-svc</strong> saves <code>campaign_json</code> → renderer merges template HTML + JSON → <code>html_url</code></div>
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <pre class="mermaid">
+sequenceDiagram
+  participant Mkt as marketing-svc
+  participant DA as deepagent
+  Mkt->>Mkt: POST /campaigns draft row
+  Mkt->>DA: KB + campaign details + json_schema + assets
+  DA-->>Mkt: filled JSON property values
+  Mkt->>Mkt: save campaign_json
+  Mkt->>Mkt: render HTML to html_url
+        </pre>
+      </div>
+    </section>
+
+    <section id="services">
+      <h2>Two services — who does what</h2>
+      <div class="split-grid">
+        <div class="split-box marketing">
+          <h4>dextr-marketing-svc</h4>
+          <ul>
+            <li>Hotels &amp; users (tenant tables)</li>
+            <li>Onboarding receive APIs</li>
+            <li>Campaign row CRUD</li>
+            <li>Template HTML + JSON schema</li>
+            <li>HTML renderer (template + JSON → email)</li>
+            <li>SES send + tracking</li>
+            <li>Analytics API</li>
+          </ul>
+        </div>
+        <div class="split-box deepagent">
+          <h4>deepagent</h4>
+          <ul>
+            <li>Crawl hotel website</li>
+            <li>Build KB Markdown file</li>
+            <li>Upload assets to S3</li>
+            <li>Call onboard APIs</li>
+            <li><strong>Fill template JSON properties</strong> from KB + campaign context</li>
+            <li>Prompt-edit JSON on user request</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="metadata">
+      <h2>Flexible data — metadata jsonb</h2>
+      <p class="lead">
+        Hotel and campaign data <strong>keeps changing</strong>. Instead of adding a new column for every field, store evolving data in a <code>metadata</code> jsonb column.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Table</th><th>Stable columns</th><th><code>metadata</code> jsonb holds</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>hotels</code></td><td>name, website_url, timezone, onboard_status</td><td>External ids, feature flags, custom fields — link to central auth later</td></tr>
+          <tr><td><code>hotel_profiles</code></td><td>sender_from_email, sender_from_name</td><td>Entire scraped profile blob: amenities, dining, rooms, brand</td></tr>
+          <tr><td><code>campaigns</code></td><td>hotel_id, template_id, status, scheduled_at</td><td>Extra campaign fields without migrations</td></tr>
+          <tr><td><code>email_templates</code></td><td>key, html_url, json_schema, prompt</td><td>Layout variants, future A/B config</td></tr>
+          <tr><td><code>users</code></td><td>username, role, hotel_id</td><td>Preferences, audit extras</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout orange">
+        <strong>Trade-off:</strong> jsonb is flexible and avoids constant schema migrations. Promote a field to a real column only when it is stable and needs indexing. For v1 this is the right default — requirements will change.
+      </div>
+    </section>
+
+    <section id="step1">
+      <h2>Step 1 — Onboarding entry point</h2>
+      <p class="lead">
+        Separate <strong>tenant table</strong> (<code>hotels</code>) and <strong>user table</strong> (<code>users</code>) in the marketing service, with dedicated onboarding APIs.
+      </p>
+
+      <table>
+        <thead><tr><th>Table</th><th>Purpose</th><th>Key columns</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>hotels</code></td>
+            <td>Marketing tenant</td>
+            <td>name, website_url, timezone, onboard_status, <code>metadata</code> jsonb</td>
+          </tr>
+          <tr>
+            <td><code>users</code></td>
+            <td>Login (Option B)</td>
+            <td>username, password_hash, role, hotel_id</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/hotels</code></td><td>Create hotel entry</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/:id</code></td><td>Read status</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/users</code></td><td>Create scoped user</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        Product linking to external systems is <strong>not required at onboard</strong>. When central auth is integrated, store external ids in <code>hotels.metadata</code> — no dedicated columns needed now.
+      </div>
+    </section>
+
+    <section id="step2">
+      <h2>Step 2 — Onboarding flow</h2>
+      <p class="lead">Required fields → deepagent scrapes → saves profile, KB, assets → <code>onboard_status = ready</code>.</p>
+
+      <h3>Required fields</h3>
+      <ul>
+        <li><strong>name</strong>, <strong>website_url</strong>, <strong>timezone</strong></li>
+      </ul>
+
+      <div class="flow-steps">
+        <div class="flow-step" data-step="1"><div><strong>scraping</strong> — deepagent crawls website</div></div>
+        <div class="flow-step" data-step="2"><div><strong>profile</strong> — PUT /hotels/:id/profile (stored in <code>hotel_profiles.metadata</code>)</div></div>
+        <div class="flow-step" data-step="3"><div><strong>KB</strong> — knowledge.md on S3 → POST /hotels/:id/kb { kb_url, version }</div></div>
+        <div class="flow-step" data-step="4"><div><strong>assets</strong> — POST /hotels/:id/assets { url, classification }</div></div>
+        <div class="flow-step" data-step="5"><div><strong>ready</strong> — profile + KB + min assets gate passes</div></div>
+      </div>
+
+      <div class="callout orange">
+        <strong>KB format:</strong> Markdown (<code>knowledge.md</code>) — agent-readable sections. Format defined in deepagent skill.
+      </div>
+    </section>
+
+    <section id="step3">
+      <h2>Step 3 — Sign in</h2>
+      <p class="lead">Two authentication options. Both are supported; <strong>central auth is preferred</strong>.</p>
+
+      <div class="auth-options">
+        <div class="auth-card preferred">
+          <div class="tag">Preferred</div>
+          <h3>Option A — Central auth</h3>
+          <ul>
+            <li>User signs in via central auth / SSO</li>
+            <li>JWT passed to marketing-svc</li>
+            <li>Service validates token and maps user → hotel</li>
+            <li>Dashboard embedded or standalone URL</li>
+          </ul>
+        </div>
+        <div class="auth-card">
+          <h3>Option B — Marketing login API</h3>
+          <ul>
+            <li><code>POST /api/v1/auth/login</code></li>
+            <li>Username + password against <code>users</code> table</li>
+            <li>Returns marketing JWT (hotel_id + role)</li>
+            <li>Roles: SUPERADMIN, HOTEL_ADMIN, HOTEL_USER</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="step4">
+      <h2>Step 4 — Layout templates</h2>
+      <p class="lead">Predefined HTML layouts. Each has HTML (S3), JSON schema (DB), and prompt (DB).</p>
+
+      <figure class="figure">
+        <img src="assets/template-gallery.png" alt="Template gallery" />
+        <figcaption>Template gallery — user picks layout before generation</figcaption>
+      </figure>
+
+      <table>
+        <thead><tr><th>Piece</th><th>Stored</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>HTML layout</td><td>S3 → <code>html_url</code></td><td>Fixed email structure</td></tr>
+          <tr><td>JSON schema</td><td>DB <code>json_schema</code></td><td>Properties deepagent fills</td></tr>
+          <tr><td>Prompt</td><td>DB <code>prompt</code></td><td>LLM instructions per layout</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="step5">
+      <h2>Step 5 — Campaign creation</h2>
+      <p class="lead">Campaign row lives in marketing-svc. deepagent fills JSON. Renderer produces HTML.</p>
+
+      <div class="flow-steps">
+        <div class="flow-step" data-step="1"><div><strong>POST /campaigns</strong> — draft: hotel_id, template_id, title, description</div></div>
+        <div class="flow-step" data-step="2"><div><strong>POST /campaigns/:id/generate</strong> — deepagent fills <code>campaign_json</code></div></div>
+        <div class="flow-step" data-step="3"><div><strong>Renderer</strong> — template HTML + campaign_json → <code>html_url</code></div></div>
+      </div>
+    </section>
+
+    <section id="step6">
+      <h2>Step 6 — Frontend preview &amp; editor</h2>
+      <figure class="figure">
+        <img src="assets/campaign-preview.png" alt="Campaign preview" />
+        <figcaption>Live preview, AI chat, Schedule / Send Now</figcaption>
+      </figure>
+      <ul>
+        <li><code>GET /campaigns/:id</code> — html_url, campaign_json, subject</li>
+        <li>Visual edit → <code>PUT /campaigns/:id</code></li>
+        <li>Prompt edit → deepagent updates JSON → re-render</li>
+      </ul>
+    </section>
+
+    <section id="step7">
+      <h2>Step 7 — Recipients</h2>
+      <p>Single email or CSV upload → <code>campaign_recipients</code></p>
+    </section>
+
+    <section id="step8">
+      <h2>Step 8 — Send email</h2>
+      <p>Load html_url → inject tracking → SES → update status to <code>sent</code>.</p>
+    </section>
+
+    <section id="step9">
+      <h2>Step 9 — Scheduling</h2>
+      <p><code>scheduled_at</code> + cron worker → same send path as Step 8.</p>
+    </section>
+
+    <section id="step10">
+      <h2>Step 10 — Analytics</h2>
+      <p>Open pixel + click redirect → <code>tracking_events</code> → <code>GET /campaigns/:id/stats</code></p>
+    </section>
+
+    <!-- DATABASE -->
+    <section id="database">
+      <h2>Database — 11 tables</h2>
+      <p class="lead">Eleven Postgres tables. Use the sidebar links below for column-level detail, or import <code>docs/email-marketing-db-schema.dbml</code> into <a href="https://dbdiagram.io">dbdiagram.io</a> for an interactive ER diagram.</p>
+      <ol>
+        <li><code>hotels</code></li>
+        <li><code>hotel_profiles</code></li>
+        <li><code>knowledge_bases</code></li>
+        <li><code>assets</code></li>
+        <li><code>users</code></li>
+        <li><code>email_templates</code></li>
+        <li><code>campaigns</code></li>
+        <li><code>campaign_recipients</code></li>
+        <li><code>campaign_links</code></li>
+        <li><code>tracking_events</code></li>
+        <li><code>jobs</code></li>
+      </ol>
+    </section>
+
+    <section id="db-hotels" class="db-section">
+      <h3>hotels</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td>Marketing hotel id</td></tr>
+          <tr><td>name</td><td>text</td><td>Display name</td></tr>
+          <tr><td>website_url</td><td>text</td><td>Scrape source</td></tr>
+          <tr><td>timezone</td><td>text</td><td>IANA — scheduling</td></tr>
+          <tr><td>onboard_status</td><td>text</td><td>pending | scraping | ready | failed</td></tr>
+          <tr><td>onboard_error</td><td>text</td><td>Last error</td></tr>
+          <tr><td>current_kb_id</td><td>uuid FK</td><td>Active KB version</td></tr>
+          <tr><td><strong>metadata</strong></td><td><strong>jsonb</strong></td><td><strong>Evolving fields — external ids, flags</strong></td></tr>
+          <tr><td>scraped_at</td><td>timestamptz</td><td>Onboard complete</td></tr>
+          <tr><td>created_at, updated_at, deleted_at</td><td>timestamptz</td><td>Audit</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-hotel-profiles" class="db-section">
+      <h3>hotel_profiles</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>hotel_id</td><td>uuid PK FK</td><td>1:1 with hotels</td></tr>
+          <tr><td>sender_from_name</td><td>text</td><td>SES display name</td></tr>
+          <tr><td>sender_from_email</td><td>text</td><td>Dextr AI SES sender</td></tr>
+          <tr><td>reply_to</td><td>text</td><td>Optional</td></tr>
+          <tr><td><strong>metadata</strong></td><td><strong>jsonb</strong></td><td><strong>Scraped profile: tagline, amenities, dining, rooms, brand</strong></td></tr>
+          <tr><td>scraped_at, updated_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-knowledge-bases" class="db-section">
+      <h3>knowledge_bases</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>hotel_id</td><td>uuid FK</td><td></td></tr>
+          <tr><td>version</td><td>int</td><td>Unique per hotel</td></tr>
+          <tr><td>kb_url</td><td>text</td><td>HTTPS URL to knowledge.md</td></tr>
+          <tr><td>status</td><td>text</td><td>building | ready | failed</td></tr>
+          <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-assets" class="db-section">
+      <h3>assets</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>hotel_id</td><td>uuid FK</td><td></td></tr>
+          <tr><td>url</td><td>text</td><td>Image URL — unique per hotel</td></tr>
+          <tr><td>classification</td><td>text</td><td>hero, room, dining, spa, bar, pool, …</td></tr>
+          <tr><td>alt_text, page_source</td><td>text</td><td>Optional</td></tr>
+          <tr><td>status</td><td>text</td><td>active | failed | deleted</td></tr>
+          <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-users" class="db-section">
+      <h3>users</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>username</td><td>text UK</td><td></td></tr>
+          <tr><td>password_hash</td><td>text</td><td>bcrypt — Option B auth</td></tr>
+          <tr><td>role</td><td>text</td><td>SUPERADMIN | HOTEL_ADMIN | HOTEL_USER</td></tr>
+          <tr><td>hotel_id</td><td>uuid FK</td><td>Null for SUPERADMIN</td></tr>
+          <tr><td>email, active</td><td>text, boolean</td><td></td></tr>
+          <tr><td>metadata</td><td>jsonb</td><td>Preferences, extras</td></tr>
+          <tr><td>last_login_at, created_at, updated_at, deleted_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-email-templates" class="db-section">
+      <h3>email_templates</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>key</td><td>text UK</td><td>editorial-split, hero-cards, …</td></tr>
+          <tr><td>name, description</td><td>text</td><td>FE gallery</td></tr>
+          <tr><td>version</td><td>int</td><td>Layout version</td></tr>
+          <tr><td>prompt</td><td>text</td><td>LLM instructions</td></tr>
+          <tr><td>html_url</td><td>text</td><td>S3 layout HTML</td></tr>
+          <tr><td>json_schema</td><td>jsonb</td><td>Slot definitions — deepagent fills these</td></tr>
+          <tr><td>thumbnail_url</td><td>text</td><td>Gallery image</td></tr>
+          <tr><td>metadata</td><td>jsonb</td><td>Extra layout config</td></tr>
+          <tr><td>active, created_at, updated_at</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-campaigns" class="db-section">
+      <h3>campaigns</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>hotel_id, template_id, template_key</td><td>uuid, uuid, text</td><td></td></tr>
+          <tr><td>title, description, campaign_reason</td><td>text</td><td>User input</td></tr>
+          <tr><td>subject, preheader</td><td>text</td><td>Email headers</td></tr>
+          <tr><td><strong>campaign_json</strong></td><td><strong>jsonb</strong></td><td><strong>Filled template properties (deepagent output)</strong></td></tr>
+          <tr><td>html_url</td><td>text</td><td>Rendered email on S3</td></tr>
+          <tr><td>status</td><td>text</td><td>draft | scheduled | sending | sent | failed | cancelled</td></tr>
+          <tr><td>scheduled_at, timezone</td><td>timestamptz, text</td><td></td></tr>
+          <tr><td>created_by_user_id</td><td>uuid FK</td><td></td></tr>
+          <tr><td>metadata</td><td>jsonb</td><td>Evolving campaign fields</td></tr>
+          <tr><td>sent_at, last_error, created_at, updated_at</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-campaign-recipients" class="db-section">
+      <h3>campaign_recipients</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>campaign_id</td><td>uuid FK</td><td></td></tr>
+          <tr><td>email</td><td>text</td><td>Unique per campaign</td></tr>
+          <tr><td>source</td><td>text</td><td>manual | csv</td></tr>
+          <tr><td>send_status</td><td>text</td><td>pending | sent | failed</td></tr>
+          <tr><td>ses_message_id, last_error, created_at</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-campaign-links" class="db-section">
+      <h3>campaign_links</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id, campaign_id</td><td>uuid</td><td></td></tr>
+          <tr><td>label, destination_url</td><td>text</td><td></td></tr>
+          <tr><td>tracking_token</td><td>text UK</td><td>Public redirect id</td></tr>
+          <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-tracking-events" class="db-section">
+      <h3>tracking_events</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id, campaign_id</td><td>uuid</td><td></td></tr>
+          <tr><td>link_id</td><td>uuid FK</td><td>Null for opens</td></tr>
+          <tr><td>recipient_email</td><td>text</td><td></td></tr>
+          <tr><td>event_type</td><td>text</td><td>open | click</td></tr>
+          <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-jobs" class="db-section">
+      <h3>jobs</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>hotel_id, campaign_id</td><td>uuid FK</td><td>Nullable</td></tr>
+          <tr><td>type</td><td>text</td><td>scrape | send | scheduled_send</td></tr>
+          <tr><td>status</td><td>text</td><td>queued | running | succeeded | failed</td></tr>
+          <tr><td>stage, progress_percent</td><td>text, int</td><td></td></tr>
+          <tr><td>payload, result</td><td>jsonb</td><td></td></tr>
+          <tr><td>error, scheduled_for, started_at, finished_at, created_at</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:0.8rem;">
+      Dextr Email Marketing Architecture Guide · v1 · Team review
+    </footer>
+  </main>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      themeVariables: {
+        primaryColor: '#eff6ff',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#2563eb',
+        lineColor: '#64748b',
+        secondaryColor: '#f8fafc',
+        tertiaryColor: '#ffffff'
+      }
+    });
+
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+          });
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    sections.forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>
