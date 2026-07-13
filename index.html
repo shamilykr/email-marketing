@@ -230,6 +230,19 @@
       padding-bottom: 8px;
     }
 
+    .phase-tag {
+      display: inline-block; font-size: 0.65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 2px 8px; border-radius: 4px; margin-left: 8px;
+    }
+    .phase-tag.p1 { background: var(--green-soft); color: var(--green); }
+    .phase-tag.p2 { background: var(--surface2); color: var(--muted); }
+
+    .db-section .api-heading {
+      font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--muted); margin: 20px 0 8px;
+    }
+
     @media (max-width: 900px) {
       .sidebar { display: none; }
       .top-header { padding-left: 24px; }
@@ -252,24 +265,22 @@
     </div>
 
     <div class="nav-group">
-      <div class="nav-group-title">Overview</div>
-      <a class="nav-link" href="#overview">System overview</a>
-      <a class="nav-link" href="#deepagent-role">deepagent role</a>
-      <a class="nav-link" href="#services">Two services</a>
+      <div class="nav-group-title">Guide</div>
+      <a class="nav-link" href="#feature">What it does</a>
+      <a class="nav-link" href="#architecture">1. Architecture</a>
+      <a class="nav-link" href="#onboarding">2. Hotel onboarding</a>
+      <a class="nav-link" href="#user-journey">3. User flow journey</a>
+      <a class="nav-link" href="#phase-scope">Phase 1 &amp; 2</a>
     </div>
 
     <div class="nav-group">
-      <div class="nav-group-title">Product flow</div>
-      <a class="nav-link" href="#step1"><span class="step-num">1</span> Entry point &amp; tenant</a>
-      <a class="nav-link" href="#step2"><span class="step-num">2</span> Onboarding flow</a>
-      <a class="nav-link" href="#step3"><span class="step-num">3</span> Sign in</a>
-      <a class="nav-link" href="#step4"><span class="step-num">4</span> Layout templates</a>
-      <a class="nav-link" href="#step5"><span class="step-num">5</span> Campaign creation</a>
-      <a class="nav-link" href="#step6"><span class="step-num">6</span> Preview &amp; editor</a>
-      <a class="nav-link" href="#step7"><span class="step-num">7</span> Recipients</a>
-      <a class="nav-link" href="#step8"><span class="step-num">8</span> Send email</a>
-      <a class="nav-link" href="#step9"><span class="step-num">9</span> Scheduling</a>
-      <a class="nav-link" href="#step10"><span class="step-num">10</span> Analytics</a>
+      <div class="nav-group-title">User journey</div>
+      <a class="nav-link" href="#journey-login"><span class="step-num">3.1</span> Login</a>
+      <a class="nav-link" href="#journey-chat"><span class="step-num">3.2</span> Chat prompt</a>
+      <a class="nav-link" href="#journey-template"><span class="step-num">3.3</span> Pick template</a>
+      <a class="nav-link" href="#journey-preview"><span class="step-num">3.4</span> Preview &amp; edits</a>
+      <a class="nav-link" href="#journey-send"><span class="step-num">3.5</span> Recipients &amp; send</a>
+      <a class="nav-link" href="#journey-status"><span class="step-num">3.6</span> Status &amp; analytics</a>
     </div>
 
     <div class="nav-group">
@@ -277,11 +288,10 @@
       <a class="nav-link" href="#database">Summary</a>
       <a class="nav-link" href="#db-hotels">hotels</a>
       <a class="nav-link" href="#db-hotel-profiles">hotel_profiles</a>
-      <a class="nav-link" href="#db-knowledge-bases">knowledge_bases</a>
       <a class="nav-link" href="#db-assets">assets</a>
-      <a class="nav-link" href="#db-users">users</a>
       <a class="nav-link" href="#db-email-templates">email_templates</a>
       <a class="nav-link" href="#db-campaigns">campaigns</a>
+      <a class="nav-link" href="#db-campaign-messages">campaign_messages</a>
       <a class="nav-link" href="#db-campaign-recipients">campaign_recipients</a>
       <a class="nav-link" href="#db-campaign-links">campaign_links</a>
       <a class="nav-link" href="#db-tracking-events">tracking_events</a>
@@ -291,332 +301,302 @@
 
   <header class="top-header">
     <h1>Email Marketing Agent</h1>
-    <span class="badge">Architecture v1</span>
+    <span class="badge">Phase 1</span>
   </header>
 
   <main class="main">
 
-    <section id="overview">
-      <h2>System overview</h2>
-      <p class="lead">
-        A new standalone service (<strong>dextr-marketing-svc</strong>) owns hotels, campaigns, email delivery, and analytics.
-        <strong>deepagent</strong> handles website scrape, KB generation, and <strong>filling template JSON properties</strong> from hotel knowledge + campaign details.
-      </p>
+    <section id="architecture">
+      <h2>1. Architecture</h2>
+      <p class="lead">dextr-marketing-svc, deepagent service plus a dashboard UI. Postgres stores state; S3 holds images and rendered HTML; SES delivers email.</p>
 
-      <div class="card-grid">
-        <div class="card accent">
-          <h4>New service</h4>
-          <div class="value">dextr-marketing-svc</div>
-        </div>
-        <div class="card">
-          <h4>AI engine</h4>
-          <div class="value">deepagent</div>
-        </div>
-        <div class="card">
-          <h4>Email delivery</h4>
-          <div class="value">AWS SES</div>
-        </div>
-        <div class="card">
-          <h4>Storage</h4>
-          <div class="value">Postgres + S3</div>
-        </div>
-      </div>
+      <figure class="figure">
+        <img src="assets/architecture-diagram.svg" alt="Email Marketing Agent system architecture diagram" style="padding:16px;background:#fff;"/>
+        <figcaption>Marketing Dashboard → dextr-marketing-svc → Postgres, S3, SES · deepagent for scrape and AI · core.dextr.ai for auth</figcaption>
+      </figure>
 
-      <div class="diagram-box">
-        <pre class="mermaid">
-flowchart TB
-  subgraph ui [Marketing UI]
-    FE[Dashboard]
-  end
-  subgraph mkt [dextr-marketing-svc]
-    API[REST APIs]
-    DB[(Postgres)]
-    SES[AWS SES]
-  end
-  subgraph da [deepagent]
-    AI[Scrape + Fill JSON]
-  end
-  S3[(S3 URLs)]
-  FE --> API
-  API --> DB
-  API --> S3
-  API --> SES
-  API --> AI
-  AI --> API
-        </pre>
-      </div>
+      <table>
+        <thead><tr><th>Component</th><th>What it is</th><th>Where it runs</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Core service</strong></td><td>Hotels, campaigns, templates, send, tracking</td><td><code>dextr-marketing-svc</code></td></tr>
+          <tr><td><strong>AI agent</strong></td><td>Website scrape, fill template JSON, chat HTML edits</td><td><code>deepagent</code></td></tr>
+          <tr><td><strong>UI &amp; preview</strong></td><td>Chat, template picker, live email preview, campaign list</td><td>Marketing <strong>Dashboard</strong></td></tr>
+          <tr><td><strong>Email delivery</strong></td><td>Outbound campaign email</td><td><strong>AWS SES</strong></td></tr>
+          <tr><td><strong>Auth</strong></td><td>Sign in with services + product entitlement check</td><td><code>core.dextr.ai</code> central auth</td></tr>
+        </tbody>
+      </table>
 
-      <div class="callout green">
-        <strong>End-to-end:</strong>
-        Create hotel → scrape (profile + KB + assets) → sign in → pick layout → create campaign row → deepagent fills JSON → preview &amp; edit → recipients → send or schedule → analytics.
-      </div>
-    </section>
-
-    <section id="deepagent-role">
-      <h2>What deepagent does</h2>
-      <p class="lead">
-        deepagent handles <strong>onboarding</strong> (website scrape → profile, KB, assets) and <strong>campaign generation</strong>
-        (fill template JSON properties from hotel KB + campaign details). It does <strong>not</strong> produce free-form “campaign copy” as the main deliverable.
-      </p>
-
-      <h3>Onboarding — URL scrape</h3>
-      <div class="flow-steps">
-        <div class="flow-step" data-step="1">
-          <div><strong>marketing-svc</strong> creates hotel row with <code>website_url</code> → <code>onboard_status = scraping</code></div>
-        </div>
-        <div class="flow-step" data-step="2">
-          <div><strong>deepagent</strong> crawls the hotel website — extracts profile, images, brand tone</div>
-        </div>
-        <div class="flow-step" data-step="3">
-          <div><strong>deepagent</strong> builds <code>knowledge.md</code> (KB) and uploads images to S3</div>
-        </div>
-        <div class="flow-step" data-step="4">
-          <div><strong>deepagent</strong> calls marketing onboard APIs — profile, KB URL, classified assets</div>
-        </div>
-        <div class="flow-step" data-step="5">
-          <div><strong>marketing-svc</strong> sets <code>onboard_status = ready</code> when profile + KB + min assets exist</div>
-        </div>
-      </div>
-
-      <div class="diagram-box">
-        <pre class="mermaid">
-sequenceDiagram
-  participant Mkt as marketing-svc
-  participant DA as deepagent
-  Mkt->>Mkt: POST /hotels with website_url
-  Mkt->>DA: trigger scrape job
-  DA->>DA: crawl website_url
-  DA->>DA: build knowledge.md + upload assets
-  DA->>Mkt: PUT profile + POST kb + POST assets
-  Mkt->>Mkt: onboard_status ready
-        </pre>
-      </div>
-
-      <h3>Campaign generation — fill template JSON</h3>
-      <p>The <strong>campaign row is created in marketing-svc</strong>. deepagent fills the <strong>properties in the template JSON schema</strong>.</p>
-
-      <div class="flow-steps">
-        <div class="flow-step" data-step="1">
-          <div><strong>marketing-svc</strong> creates campaign draft — title, description, template_id, hotel_id</div>
-        </div>
-        <div class="flow-step" data-step="2">
-          <div><strong>Inputs to deepagent</strong> — hotel KB (markdown URL), campaign details, template <code>json_schema</code>, classified assets</div>
-        </div>
-        <div class="flow-step" data-step="3">
-          <div><strong>deepagent output</strong> — values for each JSON slot: headlines, bodies, image URLs, CTA, subject, preheader</div>
-        </div>
-        <div class="flow-step" data-step="4">
-          <div><strong>marketing-svc</strong> saves <code>campaign_json</code> → renderer merges template HTML + JSON → <code>html_url</code></div>
-        </div>
-      </div>
-
-      <div class="diagram-box">
-        <pre class="mermaid">
-sequenceDiagram
-  participant Mkt as marketing-svc
-  participant DA as deepagent
-  Mkt->>Mkt: POST /campaigns draft row
-  Mkt->>DA: KB + campaign details + json_schema + assets
-  DA-->>Mkt: filled JSON property values
-  Mkt->>Mkt: save campaign_json
-  Mkt->>Mkt: render HTML to html_url
-        </pre>
-      </div>
-    </section>
-
-    <section id="services">
-      <h2>Two services — who does what</h2>
       <div class="split-grid">
         <div class="split-box marketing">
           <h4>dextr-marketing-svc</h4>
           <ul>
-            <li>Hotels &amp; users (tenant tables)</li>
-            <li>Onboarding receive APIs</li>
-            <li>Campaign row CRUD</li>
-            <li>Template HTML + JSON schema</li>
-            <li>HTML renderer (template + JSON → email)</li>
-            <li>SES send + tracking</li>
-            <li>Analytics API</li>
+            <li>Hotel tenant + onboard APIs</li>
+            <li>Campaign CRUD + chat messages</li>
+            <li>Template gallery + HTML renderer</li>
+            <li>SES send + tracking pixel / links</li>
+            <li>Background jobs (scrape, send)</li>
           </ul>
         </div>
         <div class="split-box deepagent">
           <h4>deepagent</h4>
           <ul>
-            <li>Crawl hotel website</li>
-            <li>Build KB Markdown file</li>
-            <li>Upload assets to S3</li>
-            <li>Call onboard APIs</li>
-            <li><strong>Fill template JSON properties</strong> from KB + campaign context</li>
-            <li>Prompt-edit JSON on user request</li>
+            <li>Crawl hotel website on onboard</li>
+            <li>Classify images by category</li>
+            <li>Fill template JSON from profile + prompt</li>
+            <li>Edit latest HTML on chat request</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <section id="step1">
-      <h2>Step 1 — Onboarding entry point</h2>
+    <section id="onboarding">
+      <h2>2. Hotel onboarding</h2>
       <p class="lead">
-        Separate <strong>tenant table</strong> (<code>hotels</code>) and <strong>user table</strong> (<code>users</code>) in the marketing service, with dedicated onboarding APIs.
+        Onboarding starts with an API call to <strong>dextr-marketing-svc</strong>.
+        The service creates the hotel row, calls deepagent to scrape the website, and saves profile + categorized images.
+        No knowledge-base file in Phase 1 — scraped facts go into <code>profile_data</code> jsonb.
       </p>
 
-      <table>
-        <thead><tr><th>Table</th><th>Purpose</th><th>Key columns</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><code>hotels</code></td>
-            <td>Marketing tenant</td>
-            <td>name, website_url, timezone, onboard_status, <code>metadata</code> jsonb</td>
-          </tr>
-          <tr>
-            <td><code>users</code></td>
-            <td>Login (Option B)</td>
-            <td>username, password_hash, role, hotel_id</td>
-          </tr>
-        </tbody>
-      </table>
-
+      <h3>Onboarding API (entry point)</h3>
       <table>
         <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td>POST</td><td><code>/api/v1/hotels</code></td><td>Create hotel entry</td></tr>
-          <tr><td>GET</td><td><code>/api/v1/hotels/:id</code></td><td>Read status</td></tr>
-          <tr><td>POST</td><td><code>/api/v1/users</code></td><td>Create scoped user</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/hotels</code></td><td>Create hotel + start scrape job</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/:id</code></td><td>Poll <code>onboard_status</code></td></tr>
         </tbody>
       </table>
 
-      <div class="callout">
-        Product linking to external systems is <strong>not required at onboard</strong>. When central auth is integrated, store external ids in <code>hotels.metadata</code> — no dedicated columns needed now.
+      <pre style="background:var(--surface2);padding:16px;border-radius:8px;font-size:0.85rem;overflow-x:auto;margin:16px 0;"><code>POST /api/v1/hotels
+{
+  "name": "Grand Plaza Hotel",
+  "website_url": "https://grandplaza.com",
+  "timezone": "America/New_York",
+  "alfred_hotel_id": "alf_123",
+  "daisy_hotel_id": "dsy_456",
+  "manny_hotel_id": null
+}
+
+Response: { "hotel_id": "...", "onboard_status": "scraping" }</code></pre>
+      <p>At least one of <code>alfred_hotel_id</code>, <code>daisy_hotel_id</code>, or <code>manny_hotel_id</code> should be set so sign-in-with-services can resolve the hotel later.</p>
+
+      <h3>URL scrape flow</h3>
+      <div class="flow-steps">
+        <div class="flow-step" data-step="1"><div><strong>Entry:</strong> <code>POST /api/v1/hotels</code> — marketing-svc receives hotel details, creates <code>hotels</code> row, <code>onboard_status = scraping</code></div></div>
+        <div class="flow-step" data-step="2"><div><strong>marketing-svc</strong> — enqueues <code>jobs</code> type=<code>scrape</code>, calls deepagent</div></div>
+        <div class="flow-step" data-step="3"><div><strong>deepagent</strong> — crawls <code>website_url</code>, extracts profile facts, brand tone, images</div></div>
+        <div class="flow-step" data-step="4"><div><strong>deepagent</strong> — uploads images to S3, assigns <code>category</code> per image; calls PUT profile + POST assets</div></div>
+        <div class="flow-step" data-step="5"><div><strong>marketing-svc</strong> — rebuilds <code>assets_by_category</code> cache → <code>onboard_status = ready</code></div></div>
       </div>
+
+      <div class="diagram-box">
+        <pre class="mermaid">
+sequenceDiagram
+  participant Mkt as marketing-svc
+  participant DA as deepagent
+  Note over Mkt: POST /api/v1/hotels
+  Mkt->>Mkt: create hotels row, onboard_status scraping
+  Mkt->>DA: scrape job
+  DA->>DA: crawl website_url
+  DA->>DA: upload images to S3
+  DA->>Mkt: PUT profile
+  DA->>Mkt: POST assets per category
+  Mkt->>Mkt: onboard_status ready
+  Note over Mkt: GET /api/v1/hotels/:id to poll status
+        </pre>
+      </div>
+
+      <h3>Onboard receive APIs (deepagent → marketing-svc)</h3>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td>PUT</td><td><code>/api/v1/hotels/:id/profile</code></td><td><code>profile_data</code> jsonb, sender fields</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/hotels/:id/assets</code></td><td><code>{ url, category, alt_text }</code> — one call per image</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Ready gate:</strong> <code>hotel_profiles.profile_data</code> populated + minimum asset count met → <code>onboard_status = ready</code>.</p>
+
+      <h3>Image categories</h3>
+      <p>Each image is one row in <code>assets</code> with a <code>category</code> column. marketing-svc maintains a grouped cache in <code>hotel_profiles.assets_by_category</code>:</p>
+      <pre style="background:var(--surface2);padding:12px;border-radius:8px;font-size:0.85rem;">{ "hero": ["https://cdn.../hero.jpg"], "room": ["https://cdn.../suite.jpg"], "spa": ["..."] }</pre>
     </section>
 
-    <section id="step2">
-      <h2>Step 2 — Onboarding flow</h2>
-      <p class="lead">Required fields → deepagent scrapes → saves profile, KB, assets → <code>onboard_status = ready</code>.</p>
+    <section id="user-journey">
+      <h2>3. User flow journey</h2>
+      <p class="lead">From login to sent campaign — what the hotel user experiences and what happens behind the scenes.</p>
+    </section>
 
-      <h3>Required fields</h3>
-      <ul>
-        <li><strong>name</strong>, <strong>website_url</strong>, <strong>timezone</strong></li>
-      </ul>
+    <section id="journey-login">
+      <h3>3.1 Login to dashboard</h3>
+      <p>
+        The user signs in through the Dextr core auth service. The login API is
+        <code>POST https://core.dextr.ai/api/auth/sign-in-with-services</code>.
+        A successful response returns a JWT and a list of <strong>available products</strong> for that hotel
+        (e.g. Alfred, Daisy, Email Marketing). If <strong>Email Marketing</strong> appears in that list,
+        the hotel is entitled to use this product.
+      </p>
+      <p>
+        When the user opens the Email Marketing Agent, the dashboard sends the JWT to marketing-svc on every request.
+        The token carries the hotel's product ids (<code>alfred_hotel_id</code>, <code>daisy_hotel_id</code>, and/or <code>manny_hotel_id</code>).
+        marketing-svc validates the token with core auth, then looks up the <code>hotels</code> table —
+        a row must match at least one of those ids. If a match is found and <code>onboard_status = ready</code>,
+        the dashboard loads.
+      </p>
 
       <div class="flow-steps">
-        <div class="flow-step" data-step="1"><div><strong>scraping</strong> — deepagent crawls website</div></div>
-        <div class="flow-step" data-step="2"><div><strong>profile</strong> — PUT /hotels/:id/profile (stored in <code>hotel_profiles.metadata</code>)</div></div>
-        <div class="flow-step" data-step="3"><div><strong>KB</strong> — knowledge.md on S3 → POST /hotels/:id/kb { kb_url, version }</div></div>
-        <div class="flow-step" data-step="4"><div><strong>assets</strong> — POST /hotels/:id/assets { url, classification }</div></div>
-        <div class="flow-step" data-step="5"><div><strong>ready</strong> — profile + KB + min assets gate passes</div></div>
+        <div class="flow-step" data-step="1"><div>User signs in → <code>POST https://core.dextr.ai/api/auth/sign-in-with-services</code></div></div>
+        <div class="flow-step" data-step="2"><div>Response: JWT + <code>products[]</code> — must include Email Marketing</div></div>
+        <div class="flow-step" data-step="3"><div>User opens Email Marketing Agent → <code>GET /api/v1/me</code> with <code>Authorization: Bearer &lt;jwt&gt;</code></div></div>
+        <div class="flow-step" data-step="4"><div>marketing-svc validates JWT, matches <code>alfred_hotel_id</code> / <code>daisy_hotel_id</code> / <code>manny_hotel_id</code> on <code>hotels</code></div></div>
+        <div class="flow-step" data-step="5"><div>Match found + <code>onboard_status = ready</code> → dashboard renders. No local <code>users</code> table.</div></div>
       </div>
 
       <div class="callout orange">
-        <strong>KB format:</strong> Markdown (<code>knowledge.md</code>) — agent-readable sections. Format defined in deepagent skill.
+        <strong>Prerequisite:</strong> the hotel must be onboarded via <code>POST /api/v1/hotels</code> first, with the correct product hotel id(s) stored. A valid JWT with no matching <code>hotels</code> row → 403.
       </div>
     </section>
 
-    <section id="step3">
-      <h2>Step 3 — Sign in</h2>
-      <p class="lead">Two authentication options. Both are supported; <strong>central auth is preferred</strong>.</p>
-
-      <div class="auth-options">
-        <div class="auth-card preferred">
-          <div class="tag">Preferred</div>
-          <h3>Option A — Central auth</h3>
-          <ul>
-            <li>User signs in via central auth / SSO</li>
-            <li>JWT passed to marketing-svc</li>
-            <li>Service validates token and maps user → hotel</li>
-            <li>Dashboard embedded or standalone URL</li>
-          </ul>
-        </div>
-        <div class="auth-card">
-          <h3>Option B — Marketing login API</h3>
-          <ul>
-            <li><code>POST /api/v1/auth/login</code></li>
-            <li>Username + password against <code>users</code> table</li>
-            <li>Returns marketing JWT (hotel_id + role)</li>
-            <li>Roles: SUPERADMIN, HOTEL_ADMIN, HOTEL_USER</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section id="step4">
-      <h2>Step 4 — Layout templates</h2>
-      <p class="lead">Predefined HTML layouts. Each has HTML (S3), JSON schema (DB), and prompt (DB).</p>
+    <section id="journey-chat">
+      <h3>3.2 Chat — describe the campaign</h3>
+      <p>
+        User interaction starts with a message in the chat text box on the Marketing Agent home screen.
+        The user sees <em>"Create a new campaign…"</em> and types their campaign idea — for example,
+        <em>"Generate email marketing for Mother's Day, referring to the spa offers"</em> — then clicks send.
+      </p>
 
       <figure class="figure">
-        <img src="assets/template-gallery.png" alt="Template gallery" />
-        <figcaption>Template gallery — user picks layout before generation</figcaption>
+        <img src="assets/ui-home-chat.png" alt="Marketing Agent home — chat input" />
+        <figcaption>Marketing Agent home — user starts by typing in the chat box</figcaption>
+      </figure>
+
+      <p>Recommendation cards on the dashboard are <strong>Phase 2</strong> — not shown in Phase 1.</p>
+
+      <table>
+        <thead><tr><th>Step</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>POST /api/v1/campaigns</code> — draft row with <code>user_prompt</code></td></tr>
+          <tr><td>2</td><td><code>POST /api/v1/campaigns/:id/messages</code> — chat message stored</td></tr>
+          <tr><td>3</td><td>UI shows the <strong>layout picker</strong> on the left — deepagent is not called yet</td></tr>
+        </tbody>
+      </table>
+
+      <figure class="figure">
+        <img src="assets/ui-pick-layout.png" alt="Pick a layout — template tiles" />
+        <figcaption>After sending a prompt, the user picks a layout tile (Showcase, Announcement, Highlights, …)</figcaption>
+      </figure>
+    </section>
+
+    <section id="journey-template">
+      <h3>3.3 Select a template</h3>
+
+      <p>
+        The left panel shows layout tiles: <strong>Showcase</strong>, <strong>Announcement</strong>, <strong>Highlights</strong>,
+        <strong>Promotion</strong>, <strong>Story</strong>, and <strong>Auto</strong>.
+        The right panel shows <em>"No campaign yet"</em> until a layout is chosen and generated.
+      </p>
+      <p>
+        When the user clicks a tile (e.g. <strong>Showcase</strong>), the UI handles it directly —
+        it does <strong>not</strong> send a chat message to the agent. The UI highlights the tile,
+        sets <code>template_id</code> on the campaign, and triggers generation.
+      </p>
+
+      <table>
+        <thead><tr><th>Step</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>PATCH /api/v1/campaigns/:id</code> — sets <code>template_id</code> + <code>template_key</code></td></tr>
+          <tr><td>2</td><td>UI highlights selected tile; optional system row in <code>campaign_messages</code></td></tr>
+          <tr><td>3</td><td><code>POST /api/v1/campaigns/:id/generate</code> — deepagent fills template JSON</td></tr>
+          <tr><td>4</td><td>Renderer merges template HTML + <code>campaign_json</code> → <code>html_url</code></td></tr>
+          <tr><td>5</td><td>Right panel shows <strong>preview v1</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p>deepagent receives: <code>profile_data</code> + <code>assets_by_category</code> + user prompt + template <code>json_schema</code> + <code>prompt</code>.</p>
+    </section>
+
+    <section id="journey-preview">
+      <h3>3.4 Preview &amp; chat edits</h3>
+
+      <p>
+        Once generated, the email preview appears on the right with subject line, desktop/mobile toggle,
+        and theme options. The user can keep refining via the chat box on the left
+        (<em>"Describe your campaign…"</em>).
+      </p>
+
+      <figure class="figure">
+        <img src="assets/ui-campaign-preview.png" alt="Campaign preview with chat sidebar" />
+        <figcaption>Live preview with layout picker and chat — user can edit via natural language</figcaption>
       </figure>
 
       <table>
-        <thead><tr><th>Piece</th><th>Stored</th><th>Purpose</th></tr></thead>
+        <thead><tr><th>User action</th><th>Backend</th></tr></thead>
         <tbody>
-          <tr><td>HTML layout</td><td>S3 → <code>html_url</code></td><td>Fixed email structure</td></tr>
-          <tr><td>JSON schema</td><td>DB <code>json_schema</code></td><td>Properties deepagent fills</td></tr>
-          <tr><td>Prompt</td><td>DB <code>prompt</code></td><td>LLM instructions per layout</td></tr>
+          <tr><td><em>"Update the title to Summer Spa Special"</em></td><td><code>POST /messages</code> → deepagent patches JSON/HTML → new <code>html_url</code> → preview refreshes</td></tr>
+          <tr><td><em>"Increase heading font by 2px"</em></td><td>deepagent edits the <strong>latest HTML document</strong> at <code>html_url</code></td></tr>
+          <tr><td>Click <strong>Save</strong></td><td><code>PUT /api/v1/campaigns/:id</code> — persists html + json, <code>status = draft</code></td></tr>
         </tbody>
       </table>
+
+      <p>Mixing layout from one template with fonts from another (e.g. Showcase + Highlights font) is <span class="phase-tag p2">Phase 2</span>.</p>
     </section>
 
-    <section id="step5">
-      <h2>Step 5 — Campaign creation</h2>
-      <p class="lead">Campaign row lives in marketing-svc. deepagent fills JSON. Renderer produces HTML.</p>
+    <section id="journey-send">
+      <h3>3.5 Recipients, schedule &amp; send</h3>
+      <p>After the user is happy with the preview, they upload a recipient CSV (or add emails manually), then schedule or send immediately.</p>
 
-      <div class="flow-steps">
-        <div class="flow-step" data-step="1"><div><strong>POST /campaigns</strong> — draft: hotel_id, template_id, title, description</div></div>
-        <div class="flow-step" data-step="2"><div><strong>POST /campaigns/:id/generate</strong> — deepagent fills <code>campaign_json</code></div></div>
-        <div class="flow-step" data-step="3"><div><strong>Renderer</strong> — template HTML + campaign_json → <code>html_url</code></div></div>
-      </div>
-    </section>
-
-    <section id="step6">
-      <h2>Step 6 — Frontend preview &amp; editor</h2>
       <figure class="figure">
-        <img src="assets/campaign-preview.png" alt="Campaign preview" />
-        <figcaption>Live preview, AI chat, Schedule / Send Now</figcaption>
+        <img src="assets/ui-select-send-date.png" alt="Select send date calendar" />
+        <figcaption>Schedule step — user picks a send date (holidays and recommended days highlighted)</figcaption>
       </figure>
-      <ul>
-        <li><code>GET /campaigns/:id</code> — html_url, campaign_json, subject</li>
-        <li>Visual edit → <code>PUT /campaigns/:id</code></li>
-        <li>Prompt edit → deepagent updates JSON → re-render</li>
-      </ul>
+
+      <table>
+        <thead><tr><th>User action</th><th>API</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>Upload CSV</td><td><code>POST /api/v1/campaigns/:id/recipients</code></td><td>Rows in <code>campaign_recipients</code></td></tr>
+          <tr><td>Schedule</td><td><code>POST /api/v1/campaigns/:id/schedule</code></td><td><code>status = scheduled</code>, <code>jobs</code> row for cron</td></tr>
+          <tr><td>Send now</td><td><code>POST /api/v1/campaigns/:id/send</code></td><td><code>status = sending</code>, background send job starts</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Send job:</strong> worker loops <code>campaign_recipients</code> where <code>send_status = pending</code>, sends each email via SES with tracking pixel and link redirects, updates <code>jobs.progress_percent</code>, and sets <code>campaigns.status = sent</code> when all recipients are processed.</p>
     </section>
 
-    <section id="step7">
-      <h2>Step 7 — Recipients</h2>
-      <p>Single email or CSV upload → <code>campaign_recipients</code></p>
+    <section id="journey-status">
+      <h3>3.6 Status &amp; analytics</h3>
+      <p>User can ask in chat <em>"What's the status of my campaign?"</em> — marketing-svc reads <code>campaigns.status</code>, job progress, and recipient counts, then returns an assistant message. No deepagent call needed.</p>
+      <p>Campaign list shows open/click rates from <code>tracking_events</code> via <code>GET /api/v1/campaigns/:id/stats</code>.</p>
     </section>
 
-    <section id="step8">
-      <h2>Step 8 — Send email</h2>
-      <p>Load html_url → inject tracking → SES → update status to <code>sent</code>.</p>
-    </section>
-
-    <section id="step9">
-      <h2>Step 9 — Scheduling</h2>
-      <p><code>scheduled_at</code> + cron worker → same send path as Step 8.</p>
-    </section>
-
-    <section id="step10">
-      <h2>Step 10 — Analytics</h2>
-      <p>Open pixel + click redirect → <code>tracking_events</code> → <code>GET /campaigns/:id/stats</code></p>
+    <section id="phase-scope">
+      <h2>Phase 1 &amp; Phase 2</h2>
+      <table>
+        <thead><tr><th>Area</th><th>Phase 1</th><th>Phase 2</th></tr></thead>
+        <tbody>
+          <tr><td>Onboarding</td><td>API + URL scrape → profile + images by category</td><td>Knowledge base markdown file</td></tr>
+          <tr><td>Auth</td><td>Sign in with services + product ids → lookup <code>hotels</code></td><td>—</td></tr>
+          <tr><td>Dashboard</td><td>Chat + campaign list</td><td>Recommendation tiles</td></tr>
+          <tr><td>Templates</td><td>One template per campaign</td><td>Cross-template fonts/styles</td></tr>
+          <tr><td>Recipients</td><td>CSV upload</td><td>Segments tab</td></tr>
+          <tr><td>Analytics</td><td>Opens + clicks</td><td>Revenue attribution</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <!-- DATABASE -->
     <section id="database">
-      <h2>Database — 11 tables</h2>
-      <p class="lead">Eleven Postgres tables. Use the sidebar links below for column-level detail, or import <code>docs/email-marketing-db-schema.dbml</code> into <a href="https://dbdiagram.io">dbdiagram.io</a> for an interactive ER diagram.</p>
+      <h2>Database — 10 tables</h2>
+      <p class="lead">Phase 1 schema. No <code>users</code> table (central auth). No <code>knowledge_bases</code> table (profile_data jsonb instead).</p>
       <ol>
-        <li><code>hotels</code></li>
-        <li><code>hotel_profiles</code></li>
-        <li><code>knowledge_bases</code></li>
-        <li><code>assets</code></li>
-        <li><code>users</code></li>
+        <li><code>hotels</code> — tenant, linked by <code>alfred_hotel_id</code> / <code>daisy_hotel_id</code> / <code>manny_hotel_id</code></li>
+        <li><code>hotel_profiles</code> — profile_data + assets_by_category + sender</li>
+        <li><code>assets</code> — one image per row, <code>category</code> column</li>
         <li><code>email_templates</code></li>
         <li><code>campaigns</code></li>
+        <li><code>campaign_messages</code> — chat thread</li>
         <li><code>campaign_recipients</code></li>
         <li><code>campaign_links</code></li>
         <li><code>tracking_events</code></li>
-        <li><code>jobs</code></li>
+        <li><code>jobs</code> — scrape + send workers</li>
       </ol>
     </section>
 
@@ -625,16 +605,27 @@ sequenceDiagram
       <table>
         <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>id</td><td>uuid PK</td><td>Marketing hotel id</td></tr>
+          <tr><td>id</td><td>uuid PK</td><td>Marketing internal id</td></tr>
           <tr><td>name</td><td>text</td><td>Display name</td></tr>
           <tr><td>website_url</td><td>text</td><td>Scrape source</td></tr>
           <tr><td>timezone</td><td>text</td><td>IANA — scheduling</td></tr>
+          <tr><td><strong>alfred_hotel_id</strong></td><td><strong>text UK</strong></td><td><strong>Alfred product hotel id — auth lookup</strong></td></tr>
+          <tr><td><strong>daisy_hotel_id</strong></td><td><strong>text UK</strong></td><td><strong>Daisy product hotel id — auth lookup</strong></td></tr>
+          <tr><td><strong>manny_hotel_id</strong></td><td><strong>text UK</strong></td><td><strong>Manny product hotel id — auth lookup</strong></td></tr>
           <tr><td>onboard_status</td><td>text</td><td>pending | scraping | ready | failed</td></tr>
           <tr><td>onboard_error</td><td>text</td><td>Last error</td></tr>
-          <tr><td>current_kb_id</td><td>uuid FK</td><td>Active KB version</td></tr>
-          <tr><td><strong>metadata</strong></td><td><strong>jsonb</strong></td><td><strong>Evolving fields — external ids, flags</strong></td></tr>
+          <tr><td>metadata</td><td>jsonb</td><td>Extra flags</td></tr>
           <tr><td>scraped_at</td><td>timestamptz</td><td>Onboard complete</td></tr>
           <tr><td>created_at, updated_at, deleted_at</td><td>timestamptz</td><td>Audit</td></tr>
+        </tbody>
+      </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/hotels</code></td><td>Create hotel + start scrape (onboarding entry)</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/:id</code></td><td>Read hotel + onboard_status</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/by-product-id?alfred_hotel_id=...</code></td><td>Lookup for auth (also daisy / manny params)</td></tr>
         </tbody>
       </table>
     </section>
@@ -648,23 +639,17 @@ sequenceDiagram
           <tr><td>sender_from_name</td><td>text</td><td>SES display name</td></tr>
           <tr><td>sender_from_email</td><td>text</td><td>Dextr AI SES sender</td></tr>
           <tr><td>reply_to</td><td>text</td><td>Optional</td></tr>
-          <tr><td><strong>metadata</strong></td><td><strong>jsonb</strong></td><td><strong>Scraped profile: tagline, amenities, dining, rooms, brand</strong></td></tr>
+          <tr><td><strong>profile_data</strong></td><td><strong>jsonb</strong></td><td><strong>Scraped hotel facts — fed to AI (no KB file)</strong></td></tr>
+          <tr><td><strong>assets_by_category</strong></td><td><strong>jsonb</strong></td><td><strong>Cached { category: [urls] } — rebuilt on asset change</strong></td></tr>
           <tr><td>scraped_at, updated_at</td><td>timestamptz</td><td></td></tr>
         </tbody>
       </table>
-    </section>
-
-    <section id="db-knowledge-bases" class="db-section">
-      <h3>knowledge_bases</h3>
+      <p class="api-heading">APIs</p>
       <table>
-        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td>id</td><td>uuid PK</td><td></td></tr>
-          <tr><td>hotel_id</td><td>uuid FK</td><td></td></tr>
-          <tr><td>version</td><td>int</td><td>Unique per hotel</td></tr>
-          <tr><td>kb_url</td><td>text</td><td>HTTPS URL to knowledge.md</td></tr>
-          <tr><td>status</td><td>text</td><td>building | ready | failed</td></tr>
-          <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/hotels/:id/profile</code></td><td>Save profile_data + sender fields (deepagent onboard)</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/:id/profile</code></td><td>Read profile for dashboard / AI context</td></tr>
         </tbody>
       </table>
     </section>
@@ -677,27 +662,19 @@ sequenceDiagram
           <tr><td>id</td><td>uuid PK</td><td></td></tr>
           <tr><td>hotel_id</td><td>uuid FK</td><td></td></tr>
           <tr><td>url</td><td>text</td><td>Image URL — unique per hotel</td></tr>
-          <tr><td>classification</td><td>text</td><td>hero, room, dining, spa, bar, pool, …</td></tr>
+          <tr><td><strong>category</strong></td><td><strong>text</strong></td><td><strong>hero, room, dining, spa, bar, pool, …</strong></td></tr>
           <tr><td>alt_text, page_source</td><td>text</td><td>Optional</td></tr>
           <tr><td>status</td><td>text</td><td>active | failed | deleted</td></tr>
           <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
         </tbody>
       </table>
-    </section>
-
-    <section id="db-users" class="db-section">
-      <h3>users</h3>
+      <p class="api-heading">APIs</p>
       <table>
-        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td>id</td><td>uuid PK</td><td></td></tr>
-          <tr><td>username</td><td>text UK</td><td></td></tr>
-          <tr><td>password_hash</td><td>text</td><td>bcrypt — Option B auth</td></tr>
-          <tr><td>role</td><td>text</td><td>SUPERADMIN | HOTEL_ADMIN | HOTEL_USER</td></tr>
-          <tr><td>hotel_id</td><td>uuid FK</td><td>Null for SUPERADMIN</td></tr>
-          <tr><td>email, active</td><td>text, boolean</td><td></td></tr>
-          <tr><td>metadata</td><td>jsonb</td><td>Preferences, extras</td></tr>
-          <tr><td>last_login_at, created_at, updated_at, deleted_at</td><td>timestamptz</td><td></td></tr>
+          <tr><td>POST</td><td><code>/api/v1/hotels/:id/assets</code></td><td>Add image with category (deepagent onboard)</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/:id/assets</code></td><td>List assets grouped by category</td></tr>
+          <tr><td>DELETE</td><td><code>/api/v1/hotels/:id/assets/:assetId</code></td><td>Remove image, rebuild cache</td></tr>
         </tbody>
       </table>
     </section>
@@ -719,6 +696,14 @@ sequenceDiagram
           <tr><td>active, created_at, updated_at</td><td></td><td></td></tr>
         </tbody>
       </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/api/v1/templates</code></td><td>Template gallery for dashboard tiles</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/templates/:key</code></td><td>Single template metadata + json_schema</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="db-campaigns" class="db-section">
@@ -727,16 +712,57 @@ sequenceDiagram
         <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>id</td><td>uuid PK</td><td></td></tr>
-          <tr><td>hotel_id, template_id, template_key</td><td>uuid, uuid, text</td><td></td></tr>
-          <tr><td>title, description, campaign_reason</td><td>text</td><td>User input</td></tr>
+          <tr><td>hotel_id</td><td>uuid FK</td><td></td></tr>
+          <tr><td>template_id, template_key</td><td>uuid, text</td><td>Set when user clicks template tile</td></tr>
+          <tr><td>title</td><td>text</td><td></td></tr>
+          <tr><td><strong>user_prompt</strong></td><td><strong>text</strong></td><td><strong>Original chat input</strong></td></tr>
           <tr><td>subject, preheader</td><td>text</td><td>Email headers</td></tr>
-          <tr><td><strong>campaign_json</strong></td><td><strong>jsonb</strong></td><td><strong>Filled template properties (deepagent output)</strong></td></tr>
-          <tr><td>html_url</td><td>text</td><td>Rendered email on S3</td></tr>
+          <tr><td><strong>campaign_json</strong></td><td><strong>jsonb</strong></td><td><strong>Filled template properties</strong></td></tr>
+          <tr><td>html_url</td><td>text</td><td>Latest rendered email on S3</td></tr>
           <tr><td>status</td><td>text</td><td>draft | scheduled | sending | sent | failed | cancelled</td></tr>
           <tr><td>scheduled_at, timezone</td><td>timestamptz, text</td><td></td></tr>
-          <tr><td>created_by_user_id</td><td>uuid FK</td><td></td></tr>
-          <tr><td>metadata</td><td>jsonb</td><td>Evolving campaign fields</td></tr>
+          <tr><td>created_by_email, created_by_name</td><td>text</td><td>From central auth JWT</td></tr>
+          <tr><td>metadata</td><td>jsonb</td><td></td></tr>
           <tr><td>sent_at, last_error, created_at, updated_at</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/campaigns</code></td><td>Create draft from chat prompt</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/campaigns</code></td><td>List campaigns for hotel</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/campaigns/:id</code></td><td>Get html_url, campaign_json, status</td></tr>
+          <tr><td>PATCH</td><td><code>/api/v1/campaigns/:id</code></td><td>Set template_id after tile click</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/campaigns/:id</code></td><td>Save draft html + json</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/campaigns/:id/generate</code></td><td>First render via deepagent</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/campaigns/:id/schedule</code></td><td>Set scheduled_at</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/campaigns/:id/send</code></td><td>Start send job now</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/campaigns/:id/stats</code></td><td>Opens, clicks, send progress</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="db-campaign-messages" class="db-section">
+      <h3>campaign_messages</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>id</td><td>uuid PK</td><td></td></tr>
+          <tr><td>campaign_id</td><td>uuid FK</td><td></td></tr>
+          <tr><td>role</td><td>text</td><td>user | assistant | system</td></tr>
+          <tr><td>content</td><td>text</td><td>Message text</td></tr>
+          <tr><td>action</td><td>text</td><td>template_selected, generate, html_edit, status_query</td></tr>
+          <tr><td>metadata</td><td>jsonb</td><td>Extra context</td></tr>
+          <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/campaigns/:id/messages</code></td><td>User chat message or edit instruction</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/campaigns/:id/messages</code></td><td>Chat history for sidebar</td></tr>
         </tbody>
       </table>
     </section>
@@ -754,6 +780,14 @@ sequenceDiagram
           <tr><td>ses_message_id, last_error, created_at</td><td></td><td></td></tr>
         </tbody>
       </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/campaigns/:id/recipients</code></td><td>Upload CSV or add manual emails</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/campaigns/:id/recipients</code></td><td>List recipients + send_status</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="db-campaign-links" class="db-section">
@@ -765,6 +799,14 @@ sequenceDiagram
           <tr><td>label, destination_url</td><td>text</td><td></td></tr>
           <tr><td>tracking_token</td><td>text UK</td><td>Public redirect id</td></tr>
           <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td><code>/api/v1/campaigns/:id/links</code></td><td>Register tracked CTA URLs (on generate/send)</td></tr>
+          <tr><td>GET</td><td><code>/r/:tracking_token</code></td><td>Public click redirect (no auth)</td></tr>
         </tbody>
       </table>
     </section>
@@ -779,6 +821,14 @@ sequenceDiagram
           <tr><td>recipient_email</td><td>text</td><td></td></tr>
           <tr><td>event_type</td><td>text</td><td>open | click</td></tr>
           <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/api/v1/pixel/:campaignId</code></td><td>Open tracking pixel (no auth)</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/campaigns/:id/stats</code></td><td>Aggregate opens + clicks</td></tr>
         </tbody>
       </table>
     </section>
@@ -797,10 +847,19 @@ sequenceDiagram
           <tr><td>error, scheduled_for, started_at, finished_at, created_at</td><td></td><td></td></tr>
         </tbody>
       </table>
+      <p class="api-heading">APIs</p>
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/api/v1/jobs/:id</code></td><td>Poll scrape or send job progress</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/hotels/:id/jobs</code></td><td>List jobs for hotel (onboard status)</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.85rem;color:var(--muted);margin-top:12px;"><strong>Auth API (core service):</strong> <code>POST https://core.dextr.ai/api/auth/sign-in-with-services</code> — returns JWT + products list. <strong>Marketing:</strong> <code>GET /api/v1/me</code> validates JWT and resolves hotel by product ids.</p>
     </section>
 
     <footer style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:0.8rem;">
-      Dextr Email Marketing Architecture Guide · v1 · Team review
+      Dextr Email Marketing Architecture Guide · Phase 1
     </footer>
   </main>
 
