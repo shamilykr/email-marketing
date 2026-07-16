@@ -62,6 +62,9 @@ Product linking (external hotel ids) is **not required at onboard**. Store in `h
 | POST | `/api/v1/hotels` | Create hotel entry |
 | GET | `/api/v1/hotels/:id` | Read status |
 | POST | `/api/v1/users` | Create scoped user |
+| GET | `/api/v1/assets/:assetId` | Get asset |
+| PUT | `/api/v1/assets/:assetId` | Update asset |
+| DELETE | `/api/v1/assets/:assetId` | Delete asset |
 
 ---
 
@@ -174,8 +177,7 @@ DDL: [`../email-marketing-db-schema.sql`](../email-marketing-db-schema.sql)
 | name | text | Display name |
 | website_url | text | Scrape source |
 | timezone | text | IANA — scheduling |
-| onboard_status | text | pending \| scraping \| ready \| failed |
-| onboard_error | text | Last error |
+| onboard_status | text | not_started \| pending \| completed \| failed |
 | current_kb_id | uuid FK | Active KB version |
 | metadata | jsonb | **Evolving** — external ids, flags, custom fields |
 | scraped_at | timestamptz | Onboard complete time |
@@ -219,7 +221,6 @@ DDL: [`../email-marketing-db-schema.sql`](../email-marketing-db-schema.sql)
 | classification | text | hero, room, dining, spa, … |
 | alt_text | text | Optional |
 | page_source | text | Optional |
-| status | text | active \| failed \| deleted |
 | created_at | timestamptz | |
 
 ---

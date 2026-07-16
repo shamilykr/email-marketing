@@ -498,16 +498,16 @@
   "manny_hotel_id": null
 }
 
-Response: { "hotel_id": "...", "onboard_status": "scraping" }</code></pre>
+Response: { "hotel_id": "...", "onboard_status": "pending" }</code></pre>
       <p>At least one of <code>alfred_hotel_id</code>, <code>daisy_hotel_id</code>, or <code>manny_hotel_id</code> should be set so sign-in-with-services can resolve the hotel later.</p>
 
       <h3>URL scrape flow</h3>
       <div class="flow-steps">
-        <div class="flow-step" data-step="1"><div><strong>Entry:</strong> <code>POST /api/v1/hotels</code> — marketing-svc receives hotel details, creates <code>hotels</code> row, <code>onboard_status = scraping</code></div></div>
+        <div class="flow-step" data-step="1"><div><strong>Entry:</strong> <code>POST /api/v1/hotels</code> — marketing-svc receives hotel details, creates <code>hotels</code> row, <code>onboard_status = pending</code></div></div>
         <div class="flow-step" data-step="2"><div><strong>marketing-svc</strong> — enqueues <code>jobs</code> type=<code>scrape</code>, calls deepagent</div></div>
         <div class="flow-step" data-step="3"><div><strong>deepagent</strong> — crawls <code>website_url</code>, extracts profile facts, brand tone, images</div></div>
         <div class="flow-step" data-step="4"><div><strong>deepagent</strong> — uploads images to S3, assigns <code>category</code> per image; calls PUT profile + POST assets</div></div>
-        <div class="flow-step" data-step="5"><div><strong>marketing-svc</strong> — rebuilds <code>assets_by_category</code> cache → <code>onboard_status = ready</code></div></div>
+        <div class="flow-step" data-step="5"><div><strong>marketing-svc</strong> — rebuilds <code>assets_by_category</code> cache → <code>onboard_status = completed</code></div></div>
       </div>
 
       <div class="diagram-box">
@@ -516,13 +516,13 @@ sequenceDiagram
   participant Mkt as marketing-svc
   participant DA as deepagent
   Note over Mkt: POST /api/v1/hotels
-  Mkt->>Mkt: create hotels row, onboard_status scraping
+  Mkt->>Mkt: create hotels row, onboard_status pending
   Mkt->>DA: scrape job
   DA->>DA: crawl website_url
   DA->>DA: upload images to S3
   DA->>Mkt: PUT profile
   DA->>Mkt: POST assets per category
-  Mkt->>Mkt: onboard_status ready
+  Mkt->>Mkt: onboard_status completed
   Note over Mkt: GET /api/v1/hotels/:id to poll status
         </pre>
       </div>
@@ -536,7 +536,7 @@ sequenceDiagram
         </tbody>
       </table>
 
-      <p><strong>Ready gate:</strong> <code>hotel_profiles.profile_data</code> populated + minimum asset count met → <code>onboard_status = ready</code>.</p>
+      <p><strong>Ready gate:</strong> <code>hotel_profiles.profile_data</code> populated + minimum asset count met → <code>onboard_status = completed</code>.</p>
 
       <h3>Image categories</h3>
       <p>Each image is one row in <code>assets</code> with a <code>category</code> column. marketing-svc maintains a grouped cache in <code>hotel_profiles.assets_by_category</code>:</p>
@@ -561,7 +561,7 @@ sequenceDiagram
         When the user opens the Email Marketing Agent, the dashboard sends the JWT to marketing-svc on every request.
         The token carries the hotel's product ids (<code>alfred_hotel_id</code>, <code>daisy_hotel_id</code>, and/or <code>manny_hotel_id</code>).
         marketing-svc validates the token with core auth, then looks up the <code>hotels</code> table —
-        a row must match at least one of those ids. If a match is found and <code>onboard_status = ready</code>,
+        a row must match at least one of those ids. If a match is found and <code>onboard_status = completed</code>,
         the dashboard loads.
       </p>
 
@@ -570,7 +570,7 @@ sequenceDiagram
         <div class="flow-step" data-step="2"><div>Response: JWT + <code>products[]</code> — must include Email Marketing</div></div>
         <div class="flow-step" data-step="3"><div>User opens Email Marketing Agent → <code>GET /api/v1/me</code> with <code>Authorization: Bearer &lt;jwt&gt;</code></div></div>
         <div class="flow-step" data-step="4"><div>marketing-svc validates JWT, matches <code>alfred_hotel_id</code> / <code>daisy_hotel_id</code> / <code>manny_hotel_id</code> on <code>hotels</code></div></div>
-        <div class="flow-step" data-step="5"><div>Match found + <code>onboard_status = ready</code> → dashboard renders. No local <code>users</code> table.</div></div>
+        <div class="flow-step" data-step="5"><div>Match found + <code>onboard_status = completed</code> → dashboard renders. No local <code>users</code> table.</div></div>
       </div>
 
       <div class="callout orange">
@@ -734,8 +734,7 @@ sequenceDiagram
           <tr><td><strong>alfred_hotel_id</strong></td><td><strong>text UK</strong></td><td><strong>Alfred product hotel id — auth lookup</strong></td></tr>
           <tr><td><strong>daisy_hotel_id</strong></td><td><strong>text UK</strong></td><td><strong>Daisy product hotel id — auth lookup</strong></td></tr>
           <tr><td><strong>manny_hotel_id</strong></td><td><strong>text UK</strong></td><td><strong>Manny product hotel id — auth lookup</strong></td></tr>
-          <tr><td>onboard_status</td><td>text</td><td>pending | scraping | ready | failed</td></tr>
-          <tr><td>onboard_error</td><td>text</td><td>Last error</td></tr>
+          <tr><td>onboard_status</td><td>text</td><td>not_started | pending | completed | failed</td></tr>
           <tr><td>metadata</td><td>jsonb</td><td>Extra flags</td></tr>
           <tr><td>scraped_at</td><td>timestamptz</td><td>Onboard complete</td></tr>
           <tr><td>created_at, updated_at, deleted_at</td><td>timestamptz</td><td>Audit</td></tr>
@@ -747,6 +746,8 @@ sequenceDiagram
         <tbody>
           <tr><td>POST</td><td><code>/api/v1/hotels</code></td><td>Create hotel + start scrape (onboarding entry)</td></tr>
           <tr><td>GET</td><td><code>/api/v1/hotels/:id</code></td><td>Read hotel + onboard_status</td></tr>
+          <tr><td>PATCH</td><td><code>/api/v1/hotels/:id</code></td><td>Update hotel</td></tr>
+          <tr><td>DELETE</td><td><code>/api/v1/hotels/:id</code></td><td>Delete hotel</td></tr>
           <tr><td>GET</td><td><code>/api/v1/hotels/by-product-id?alfred_hotel_id=...</code></td><td>Lookup for auth (also daisy / manny params)</td></tr>
         </tbody>
       </table>
@@ -786,7 +787,6 @@ sequenceDiagram
           <tr><td>url</td><td>text</td><td>Image URL — unique per hotel</td></tr>
           <tr><td><strong>category</strong></td><td><strong>text</strong></td><td><strong>hero, room, dining, spa, bar, pool, …</strong></td></tr>
           <tr><td>alt_text, page_source</td><td>text</td><td>Optional</td></tr>
-          <tr><td>status</td><td>text</td><td>active | failed | deleted</td></tr>
           <tr><td>created_at</td><td>timestamptz</td><td></td></tr>
         </tbody>
       </table>
@@ -797,6 +797,9 @@ sequenceDiagram
           <tr><td>POST</td><td><code>/api/v1/hotels/:id/assets</code></td><td>Add image with category (deepagent onboard)</td></tr>
           <tr><td>GET</td><td><code>/api/v1/hotels/:id/assets</code></td><td>List assets grouped by category</td></tr>
           <tr><td>DELETE</td><td><code>/api/v1/hotels/:id/assets/:assetId</code></td><td>Remove image, rebuild cache</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/assets/:assetId</code></td><td>Get asset by ID</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/assets/:assetId</code></td><td>Update asset</td></tr>
+          <tr><td>DELETE</td><td><code>/api/v1/assets/:assetId</code></td><td>Delete asset</td></tr>
         </tbody>
       </table>
     </section>
